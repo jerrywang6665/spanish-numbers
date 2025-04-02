@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Números en Español 0-100</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .number-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 20px 0;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        #generateBtn {
+            background-color: #3498db;
+            color: white;
+        }
+        #generateBtn:hover {
+            background-color: #2980b9;
+        }
+        #autoToggle {
+            background-color: #2ecc71;
+            color: white;
+        }
+        #autoToggle.active {
+            background-color: #e74c3c;
+        }
+        #rangeToggle {
+            background-color: #9b59b6;
+            color: white;
+        }
+        .settings {
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Números Españoles 0-100</h1>
+        <div class="number-display" id="numberDisplay">?</div>
+        <div class="controls">
+            <button id="generateBtn">Nuevo Número</button>
+            <button id="autoToggle">Auto Play</button>
+            <button id="rangeToggle">0-100</button>
+        </div>
+        <div class="settings">
+            <label for="speedControl">Velocidad: </label>
+            <input type="range" id="speedControl" min="0.5" max="3" step="0.5" value="1">
+            <span id="speedValue">1x</span>
+        </div>
+    </div>
+
+    <script>
+        // 西班牙语数字发音库
+        const spanishNumbers = {
+            0: "cero", 1: "uno", 2: "dos", 3: "tres", 4: "cuatro", 5: "cinco",
+            6: "seis", 7: "siete", 8: "ocho", 9: "nueve", 10: "diez",
+            11: "once", 12: "doce", 13: "trece", 14: "catorce", 15: "quince",
+            16: "dieciséis", 17: "diecisiete", 18: "dieciocho", 19: "diecinueve",
+            20: "veinte", 21: "veintiuno", 22: "veintidós", 23: "veintitrés", 
+            24: "veinticuatro", 25: "veinticinco", 26: "veintiséis", 
+            27: "veintisiete", 28: "veintiocho", 29: "veintinueve",
+            30: "treinta", 31: "treinta y uno", 32: "treinta y dos", 
+            40: "cuarenta", 50: "cincuenta", 60: "sesenta", 
+            70: "setenta", 80: "ochenta", 90: "noventa", 100: "cien"
+        };
+
+        // 生成10-100之间的随机数（补全模式）
+        function generateRandomNumber(min = 0, max = 100) {
+            let num = Math.floor(Math.random() * (max - min + 1)) + min;
+            
+            // 如果数字未预录，生成组合发音
+            if (!spanishNumbers[num]) {
+                const tens = Math.floor(num / 10) * 10;
+                const units = num % 10;
+                spanishNumbers[num] = spanishNumbers[tens] + 
+                    (units > 0 ? " y " + spanishNumbers[units] : "");
+            }
+            
+            return num;
+        }
+
+        // 语音合成函数
+        function speakSpanish(text) {
+            const utterance = new SpeechSynthesisUtterance();
+            utterance.text = text;
+            utterance.lang = 'es-ES';
+            utterance.rate = document.getElementById('speedControl').value;
+            
+            // 优先选择女性声音
+            const voices = window.speechSynthesis.getVoices();
+            const spanishVoice = voices.find(voice => 
+                voice.lang === 'es-ES' && voice.name.includes('Female')) || 
+                voices.find(voice => voice.lang === 'es-ES');
+            
+            if (spanishVoice) utterance.voice = spanishVoice;
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // DOM元素
+        const display = document.getElementById('numberDisplay');
+        const generateBtn = document.getElementById('generateBtn');
+        const autoToggle = document.getElementById('autoToggle');
+        const rangeToggle = document.getElementById('rangeToggle');
+        const speedControl = document.getElementById('speedControl');
+        const speedValue = document.getElementById('speedValue');
+        
+        let autoInterval = null;
+        let currentRange = [0, 100];
+
+        // 生成并显示数字
+        function generateAndSpeak() {
+            const num = generateRandomNumber(...currentRange);
+            display.textContent = num;
+            speakSpanish(spanishNumbers[num]);
+            
+            // 动画效果
+            display.style.transform = 'scale(1.1)';
+            display.style.color = `hsl(${num * 3.6}, 70%, 50%)`;
+            setTimeout(() => {
+                display.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // 事件监听
+        generateBtn.addEventListener('click', generateAndSpeak);
+        
+        autoToggle.addEventListener('click', function() {
+            if (autoInterval) {
+                clearInterval(autoInterval);
+                autoInterval = null;
+                this.textContent = 'Auto Play';
+                this.classList.remove('active');
+            } else {
+                const intervalTime = 3000 / speedControl.value;
+                autoInterval = setInterval(generateAndSpeak, intervalTime);
+                this.textContent = 'Detener';
+                this.classList.add('active');
+                generateAndSpeak(); // 立即播放一个
+            }
+        });
+        
+        rangeToggle.addEventListener('click', function() {
+            currentRange = currentRange[0] === 0 ? [10, 100] : [0, 100];
+            this.textContent = currentRange[0] === 0 ? '0-100' : '10-100';
+        });
+        
+        speedControl.addEventListener('input', function() {
+            speedValue.textContent = this.value + 'x';
+            if (autoInterval) {
+                clearInterval(autoInterval);
+                const intervalTime = 3000 / this.value;
+                autoInterval = setInterval(generateAndSpeak, intervalTime);
+            }
+        });
+
+        // 初始化语音合成API
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = function() {
+                console.log("Voces cargadas:", speechSynthesis.getVoices());
+            };
+        }
+
+        // 加载后立即显示一个数字
+        window.addEventListener('load', () => {
+            display.textContent = "Hola";
+            setTimeout(generateAndSpeak, 1000);
+        });
+    </script>
+</body>
+</html>
